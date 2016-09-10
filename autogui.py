@@ -1,6 +1,5 @@
 import pyautogui
 import time
-
 from firebase import firebase
 
 
@@ -12,25 +11,32 @@ def fetch_wink(collection):
     firebase = connect_db()
     blink_left = firebase.get('wink', 'left')
     blink_right = firebase.get('wink', 'right')
-    return [blink_left, blink_right]
+    return blink_left, blink_right
 
 def fetch_gyro(collection):
     firebase = connect_db()
-    response_x = firebase.get('gyro', 'x')
-    response_y = firebase.get('gyro', 'y')
-    return [response_x, response_y]
+    x = firebase.get('gyro', 'x')
+    y = firebase.get('gyro', 'y')
+    return x, y
 
-screenWidth, screenHeight = pyautogui.size()
+def calc_delta_gyro(collection, delta_time):
+	x, y = fetch_gyro('gyro')
+	time.sleep(delta_time)
+	x_new, y_new = fetch_gyro('gyro')
+	print(x,y)
+	return float(x_new)-float(x), float(y_new)-float(y)
 
-#def move_cursor(time):
-#	direction = fetch_gyro('gyro')
-#	pyautogui.moveTo(float(direction[0]), float(direction[1]), time)
+def main():
+	while(True):
+		x_cur, y_cur = pyautogui.position()
+		d_x, d_y = calc_delta_gyro('gyro', 0.1)
+		click_left, click_right = fetch_wink('wink')
+		x_scale, y_scale = 1000, 1000 # adjust here
+		pyautogui.moveRel(x_scale*d_x, y_scale*d_y) # make sure gyro coord is same as pyautogui
+		if click_left and not click_right:
+			pyautogui.click(button='left')
+		if not click_left and click_right:
+			pyautogui.click(button='right')
 
-print(fetch_wink('wink'))
-print(fetch_gyro('gyro'))
-
-#move_cursor(1)
-
-
-
-
+if __name__ == "__main__":
+    main()
