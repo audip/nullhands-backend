@@ -1,25 +1,36 @@
 import pyautogui
+import threading
 import time
 import json
 import requests
+import Queue
 
 baseURL = 'https://camera-db.firebaseio.com'
+dataQueue = Queue.Queue()
 
-def fetch_data():
-    firebase = requests.get('%s/%s.json' % (baseURL, 'values'))
-    return firebase.json()
+class fetch_data(threading.Thread):
+	def __init__(self, q):
+		self.q = q
+		threading.Thread.__init__(self)
 
-# def calc_delta_gyro(collection, delta_time):
-# 	gyro_data = fetch_data('gyro')
-# 	print(gyro_data)
-# 	x, y = gyro_data['x'], gyro_data['y']
-# 	time.sleep(delta_time)
-# 	new_gyro_data = fetch_data('gyro')
-# 	x_new, y_new = new_gyro_data['x'], new_gyro_data['y']
-# 	print(x,y)
-# 	return float(x_new)-float(x), float(y_new)-float(y)
+		def fetch_data():
+    		firebase = requests.get('%s/%s.json' % (baseURL, 'values'))
+    		return firebase.json()
 
-def move_cursor(gyro_data, x_threshold,y_threshold):
+		def run(self):
+			while True:
+				data = fetch_data()
+				self.q.put(data)
+
+
+# def fetch_data():
+#     firebase = requests.get('%s/%s.json' % (baseURL, 'values'))
+#     return firebase.json()
+
+def callback():
+	print "lol i have no fucking clue when callback is called"
+
+def move_cursor(gyro_data, x_threshold, y_threshold):
 	x,y = gyro_data['x'],gyro_data['y']
 	x,y = float(x), float(y)
 	x = 0 if abs(x) < x_threshold else x
@@ -41,14 +52,14 @@ def click_cursor(wink_data):
 def main():
 	try:
 		while(True):
-			values_dict = fetch_data()
-			gyro_dict = values_dict['gyro']
-			speech_dict = values_dict['speech']
-			wink_dict = values_dict['wink']
+			data = dataQueue.get()
+			gyro_dict, speech_dict, wink_dict = data['gyro'],data['speech'],data['wink']
 			move_cursor(gyro_dict, 0.005, 0.02)
 			click_cursor(wink_dict)
 	except Exception as e:
 		print(e)
 			
 if __name__ == "__main__":
+	thread = fetch_data(dataQueue)
+	thread.start()
 	main()
