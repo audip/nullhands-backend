@@ -7,7 +7,8 @@ import requests, json
 import os
 
 def save_data(wink_data):
-    url = 'https://camera-db.firebaseio.com/wink.json'
+    wink_data = {'wink': wink_data}
+    url = 'https://camera-db.firebaseio.com/values.json'
     result = requests.put(url, data=json.dumps(wink_data))
     return result
 
