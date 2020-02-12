@@ -1,5 +1,5 @@
 python-firebase==1.2
-requests==2.11.1
+requests==2.20.0
 altgraph==0.12
 Django==1.11.28
 image==1.5.4
